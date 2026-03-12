@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArbLog</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#08090d;--surface:#0f1017;--surface2:#161820;--border:#22242e;--border2:#2e3040;
+    --accent:#c8f04a;--accent-dim:rgba(200,240,74,0.12);
+    --red:#ff4d6d;--red-dim:rgba(255,77,109,0.12);
+    --blue:#4d9fff;--blue-dim:rgba(77,159,255,0.12);
+    --text:#dde0ee;--muted:#555870;--muted2:#3a3d50;
+    --mono:'JetBrains Mono',monospace;--sans:'Syne',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px;}
+  body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(200,240,74,0.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
+  .app{position:relative;z-index:1;max-width:1060px;margin:0 auto;padding:28px 16px 80px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;padding-bottom:22px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
+  .brand{display:flex;align-items:baseline;gap:12px;}
+  .brand-name{font-size:26px;font-weight:800;color:var(--accent);}
+  .brand-tag{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+  .hdr-right{display:flex;align-items:center;gap:14px;}
+  .pnl-label{font-family:var(--mono);font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+  .pnl-val{font-family:var(--mono);font-size:24px;font-weight:500;color:var(--accent);text-align:right;}
+  .pnl-val.neg{color:var(--red);}
+  .btn-ghost{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 13px;background:none;border:1px solid var(--border2);color:var(--muted);border-radius:3px;cursor:pointer;}
+  .btn-ghost:hover{color:var(--text);background:var(--surface2);}
+
+  .settings-box{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:18px 22px;margin-bottom:18px;display:none;}
+  .settings-box.open{display:block;}
+  .settings-box h3{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+  .settings-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+  .sf{display:flex;flex-direction:column;gap:5px;flex:1;min-width:160px;}
+  .sf label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .sf input{font-family:var(--mono);font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:3px;padding:8px 11px;outline:none;width:100%;}
+  .sf input:focus{border-color:var(--accent);}
+  .btn-accent{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:9px 20px;background:var(--accent);color:#08090d;border:none;border-radius:3px;cursor:pointer;white-space:nowrap;}
+  .btn-accent:hover{background:#d4f55c;}
+
+  .tabs{display:flex;gap:2px;margin-bottom:22px;}
+  .tab-btn{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:9px 20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;border-radius:3px 3px 0 0;transition:all 0.2s;}
+  .tab-btn.active{background:var(--surface2);color:var(--accent);border-color:var(--accent);border-bottom-color:var(--surface2);}
+
+  .scan-zone{background:var(--surface2);border:1px solid var(--border2);border-radius:0 4px 4px 4px;padding:22px;margin-bottom:18px;}
+  .scan-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+  .scan-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .scan-line{flex:1;height:1px;background:var(--border);}
+  .drop-area{border:1.5px dashed var(--border2);border-radius:4px;padding:26px;text-align:center;cursor:pointer;background:var(--surface);position:relative;transition:all 0.2s;}
+  .drop-area:hover,.drop-area.over{border-color:var(--accent);background:var(--accent-dim);}
+  .drop-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .drop-icon{font-size:26px;display:block;margin-bottom:7px;}
+  .drop-text{font-family:var(--mono);font-size:11px;color:var(--muted);}
+  .drop-text strong{color:var(--accent);}
+  .preview-wrap{display:flex;gap:18px;align-items:flex-start;}
+  .preview-img{width:130px;min-width:130px;border-radius:4px;border:1px solid var(--border2);object-fit:cover;}
+  .preview-actions{display:flex;flex-direction:column;gap:9px;}
+  .btn-scan{font-family:var(--sans);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:11px 26px;background:var(--accent);color:#08090d;border:none;border-radius:3px;cursor:pointer;transition:all 0.2s;}
+  .btn-scan:hover{background:#d4f55c;}
+  .btn-scan:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-change{font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);padding:6px 11px;border-radius:3px;cursor:pointer;}
+  .status-bar{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding-top:8px;min-height:22px;color:var(--muted);}
+  .status-bar.scanning{color:var(--accent);}
+  .status-bar.err{color:var(--red);}
+
+  .queue-panel{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:18px 22px;margin-bottom:18px;display:none;}
+  .queue-panel.open{display:block;}
+  .queue-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .queue-title{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);}
+  .queue-sub{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;}
+  .queue-btns{display:flex;gap:8px;}
+  .btn-log-all{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px;background:var(--accent);color:#08090d;border:none;border-radius:3px;cursor:pointer;}
+  .btn-log-all:hover{background:#d4f55c;}
+  .btn-discard{font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);padding:7px 13px;border-radius:3px;cursor:pointer;}
+  .btn-discard:hover{color:var(--red);border-color:var(--red);}
+  .queue-list{display:flex;flex-direction:column;gap:9px;}
+  .qi{background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+  .qf{display:flex;flex-direction:column;gap:4px;min-width:70px;flex:1;}
+  .qf label{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted2);}
+  .qf input,.qf select{font-family:var(--mono);font-size:11px;color:var(--text);background:var(--surface2);border:1px solid var(--border2);border-radius:2px;padding:6px 8px;outline:none;width:100%;-webkit-appearance:none;}
+  .qf input:focus,.qf select:focus{border-color:var(--accent);}
+  .qf input.hi{border-color:rgba(200,240,74,0.4);background:rgba(200,240,74,0.04);}
+  .qf input.ro{color:var(--accent);background:var(--accent-dim);border-color:rgba(200,240,74,0.2);cursor:default;}
+  .qf input.ro.neg{color:var(--red);background:var(--red-dim);}
+  .qf select option{background:var(--surface2);}
+  .qi-del{background:none;border:1px solid var(--border);color:var(--muted2);border-radius:2px;cursor:pointer;width:30px;height:30px;font-size:14px;align-self:flex-end;flex-shrink:0;}
+  .qi-del:hover{color:var(--red);border-color:var(--red);}
+
+  .entry-form{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:22px;margin-bottom:18px;}
+  .form-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .form-title{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);}
+  .form-grid{display:grid;gap:11px;margin-bottom:18px;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+  .field input,.field select{font-family:var(--mono);font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border2);border-radius:3px;padding:8px 11px;outline:none;width:100%;-webkit-appearance:none;}
+  .field input:focus,.field select:focus{border-color:var(--accent);}
+  .field input.ro{color:var(--accent);background:var(--accent-dim);border-color:rgba(200,240,74,0.2);cursor:default;}
+  .field input.ro.neg{color:var(--red);background:var(--red-dim);}
+  .field select option{background:var(--surface2);}
+  .form-actions{display:flex;gap:9px;justify-content:flex-end;}
+  .btn-log{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 26px;background:var(--accent);color:#08090d;border:none;border-radius:3px;cursor:pointer;}
+  .btn-log:hover{background:#d4f55c;}
+  .btn-clear{font-family:var(--mono);font-size:10px;color:var(--muted);background:none;border:1px solid var(--border);padding:9px 14px;border-radius:3px;cursor:pointer;}
+  .btn-clear:hover{color:var(--red);border-color:var(--red);}
+
+  .ledger{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+  .ledger-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap;gap:9px;}
+  .ledger-left{display:flex;align-items:center;gap:12px;}
+  .ledger-title{font-family:var(--mono);font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+  .ledger-count{font-family:var(--mono);font-size:10px;color:var(--muted2);}
+  .ledger-acts{display:flex;gap:7px;}
+  .btn-clr-all{font-family:var(--mono);font-size:10px;padding:6px 12px;background:none;border:1px solid var(--border);color:var(--muted2);border-radius:3px;cursor:pointer;}
+  .btn-clr-all:hover{border-color:var(--red);color:var(--red);}
+  .tbl-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:9px 13px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface2);}
+  tbody tr{border-bottom:1px solid var(--border);}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:var(--surface2);}
+  tbody td{font-family:var(--mono);font-size:11px;color:var(--text);padding:9px 13px;white-space:nowrap;}
+  .td-win{color:var(--accent);}.td-loss{color:var(--red);}.td-void{color:var(--muted);}.td-cashed{color:var(--blue);}
+  .td-pp{color:var(--accent);font-weight:500;}.td-pn{color:var(--red);font-weight:500;}
+  .td-vy{color:var(--accent);}.td-vn{color:var(--muted2);}
+  .del-btn{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;padding:2px 5px;}
+  .del-btn:hover{color:var(--red);}
+  .empty{padding:44px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted2);}
+
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--surface2);border:1px solid var(--accent);border-radius:4px;padding:11px 18px;font-family:var(--mono);font-size:11px;color:var(--accent);z-index:999;pointer-events:none;transform:translateY(60px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.t-err{border-color:var(--red);color:var(--red);}
+  .toast.t-info{border-color:var(--blue);color:var(--blue);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spinner{display:inline-block;width:10px;height:10px;border:1.5px solid rgba(200,240,74,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin-right:6px;vertical-align:middle;}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr 1fr;}.tbl-wrap{overflow-x:auto;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">
+      <span class="brand-name">ArbLog</span>
+      <span class="brand-tag">// Bet Slip Scanner</span>
+    </div>
+    <div class="hdr-right">
+      <button class="btn-ghost" onclick="toggleSettings()">⚙ Settings</button>
+      <div>
+        <div class="pnl-label">Today's P&L</div>
+        <div class="pnl-val" id="totalPnl">+$0.00</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="settings-box" id="settingsBox">
+    <h3>API Key</h3>
+    <div class="settings-row">
+      <div class="sf">
+        <label>Anthropic API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+      </div>
+      <div class="sf">
+        <label>Tennis Tab Name</label>
+        <input type="text" id="tennisTabInput" placeholder="Tennis">
+      </div>
+      <div class="sf">
+        <label>Boosts Tab Name</label>
+        <input type="text" id="boostTabInput" placeholder="Boosts">
+      </div>
+      <button class="btn-accent" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-tennis" onclick="switchTab('tennis')">🎾 Tennis</button>
+    <button class="tab-btn" id="tab-boost" onclick="switchTab('boost')">⚡ Boosts / Bonus Bets</button>
+  </div>
+
+  <div class="scan-zone">
+    <div class="scan-hdr"><span class="scan-title">Scan Bet Slip</span><div class="scan-line"></div></div>
+    <div class="drop-area" id="dropArea">
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+      <span class="drop-icon">📸</span>
+      <div class="drop-text"><strong>Drop screenshot</strong> or tap to upload — detects multiple bets automatically</div>
+    </div>
+    <div class="preview-wrap" id="previewWrap" style="display:none">
+      <img class="preview-img" id="previewImg" src="" alt="slip">
+      <div class="preview-actions">
+        <button class="btn-scan" id="scanBtn" onclick="scanImage()">⚡ Scan Slip</button>
+        <button class="btn-change" onclick="resetImage()">↩ Change</button>
+      </div>
+    </div>
+    <div class="status-bar" id="statusBar"></div>
+  </div>
+
+  <div class="queue-panel" id="queuePanel">
+    <div class="queue-hdr">
+      <div>
+        <div class="queue-title">Scanned Bets — Review & Confirm</div>
+        <div class="queue-sub" id="queueSub"></div>
+      </div>
+      <div class="queue-btns">
+        <button class="btn-discard" onclick="discardQueue()">Discard All</button>
+        <button class="btn-log-all" onclick="logAll()">✓ Log All → Sheets</button>
+      </div>
+    </div>
+    <div class="queue-list" id="queueList"></div>
+  </div>
+
+  <div class="entry-form">
+    <div class="form-hdr">
+      <span class="form-title" id="formTitle">🎾 Manual Entry</span>
+      <button class="btn-clear" onclick="clearForm()">Clear</button>
+    </div>
+    <div id="tennisForm">
+      <div class="form-grid">
+        <div class="field"><label>Set #</label><input type="number" id="t_set" placeholder="1"></div>
+        <div class="field"><label>Game #</label><input type="number" id="t_game" placeholder="1"></div>
+        <div class="field"><label>Odds</label><input type="text" id="t_odds" placeholder="+150"></div>
+        <div class="field"><label>Wager ($)</label><input type="number" id="t_wager" step="0.01" placeholder="0.00" oninput="calcPnl('t')"></div>
+        <div class="field"><label>Result</label>
+          <select id="t_result" onchange="calcPnl('t')">
+            <option value="">—</option><option>Win</option><option>Loss</option><option>Void</option><option>Cashed Out</option>
+          </select>
+        </div>
+        <div class="field"><label>Return ($)</label><input type="number" id="t_return" step="0.01" placeholder="0.00" oninput="calcPnl('t')"></div>
+        <div class="field"><label>Profit / Loss</label><input type="text" id="t_pnl" class="ro" readonly placeholder="Auto"></div>
+        <div class="field"><label>Sportsbook</label><input type="text" id="t_book" placeholder="FanDuel"></div>
+        <div class="field"><label>Account Owner</label><input type="text" id="t_owner" placeholder="Name"></div>
+        <div class="field"><label>Verified</label>
+          <select id="t_verified"><option value="">—</option><option>Yes</option><option>No</option></select>
+        </div>
+      </div>
+    </div>
+    <div id="boostForm" style="display:none">
+      <div class="form-grid">
+        <div class="field"><label>Team / Player</label><input type="text" id="b_team" placeholder="e.g. Lakers"></div>
+        <div class="field"><label>Wager Type</label><input type="text" id="b_type" placeholder="Boost, Free Bet..."></div>
+        <div class="field"><label>Wager ($)</label><input type="number" id="b_wager" step="0.01" placeholder="0.00" oninput="calcPnl('b')"></div>
+        <div class="field"><label>Result</label>
+          <select id="b_result" onchange="calcPnl('b')">
+            <option value="">—</option><option>Win</option><option>Loss</option><option>Void</option><option>Cashed Out</option>
+          </select>
+        </div>
+        <div class="field"><label>Return ($)</label><input type="number" id="b_return" step="0.01" placeholder="0.00" oninput="calcPnl('b')"></div>
+        <div class="field"><label>Profit / Loss</label><input type="text" id="b_pnl" class="ro" readonly placeholder="Auto"></div>
+        <div class="field"><label>Sportsbook</label><input type="text" id="b_book" placeholder="FanDuel"></div>
+        <div class="field"><label>Account Owner</label><input type="text" id="b_owner" placeholder="Name"></div>
+        <div class="field"><label>Verified</label>
+          <select id="b_verified"><option value="">—</option><option>Yes</option><option>No</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-log" onclick="logEntry()">+ Log Entry → Sheets</button>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <div class="ledger-hdr">
+      <div class="ledger-left">
+        <span class="ledger-title" id="ledgerTitle">Tennis — Today's Ledger</span>
+        <span class="ledger-count" id="ledgerCount">0 entries</span>
+      </div>
+      <div class="ledger-acts">
+        <button class="btn-clr-all" onclick="clearAll()">Clear All</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <div id="tennisTable">
+        <table>
+          <thead><tr><th>Set</th><th>Game</th><th>Odds</th><th>Wager</th><th>Result</th><th>Return</th><th>P/L</th><th>Sportsbook</th><th>Owner</th><th>Verified</th><th></th></tr></thead>
+          <tbody id="tennisTbody"></tbody>
+        </table>
+        <div class="empty" id="tennisEmpty">No entries yet</div>
+      </div>
+      <div id="boostTable" style="display:none">
+        <table>
+          <thead><tr><th>Team / Player</th><th>Wager Type</th><th>Wager</th><th>Result</th><th>Return</th><th>P/L</th><th>Sportsbook</th><th>Owner</th><th>Verified</th><th></th></tr></thead>
+          <tbody id="boostTbody"></tbody>
+        </table>
+        <div class="empty" id="boostEmpty">No entries yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── CONFIG ──
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz_6dniChTUA3LcXE1QOhMKwkZkXCSQqE1PKPcnojP84SCw4rgsIPq2GSwx6VNGg9S3Kg/exec';
+
+  // ── STATE ──
+  let activeTab = 'tennis';
+  let imgB64 = null;
+  let entries = { tennis: [], boost: [] };
+  let scanQueue = [];
+  let settings = { apiKey: '', tennisTab: 'Tennis', boostTab: 'Boosts' };
+
+  // ── INIT ──
+  function init() {
+    const saved = localStorage.getItem('arblog-entries');
+    if (saved) entries = JSON.parse(saved);
+    const savedS = localStorage.getItem('arblog-settings');
+    if (savedS) {
+      settings = { ...settings, ...JSON.parse(savedS) };
+      document.getElementById('apiKeyInput').value = settings.apiKey || '';
+      document.getElementById('tennisTabInput').value = settings.tennisTab || 'Tennis';
+      document.getElementById('boostTabInput').value = settings.boostTab || 'Boosts';
+    }
+    renderTable();
+    updatePnl();
+  }
+
+  function persist() { localStorage.setItem('arblog-entries', JSON.stringify(entries)); }
+
+  // ── SETTINGS ──
+  function toggleSettings() { document.getElementById('settingsBox').classList.toggle('open'); }
+  function saveSettings() {
+    settings.apiKey = document.getElementById('apiKeyInput').value.trim();
+    settings.tennisTab = document.getElementById('tennisTabInput').value.trim() || 'Tennis';
+    settings.boostTab = document.getElementById('boostTabInput').value.trim() || 'Boosts';
+    localStorage.setItem('arblog-settings', JSON.stringify(settings));
+    document.getElementById('settingsBox').classList.remove('open');
+    showToast('✓ Settings saved');
+  }
+
+  // ── TABS ──
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-tennis').classList.toggle('active', tab === 'tennis');
+    document.getElementById('tab-boost').classList.toggle('active', tab === 'boost');
+    document.getElementById('tennisForm').style.display = tab === 'tennis' ? '' : 'none';
+    document.getElementById('boostForm').style.display = tab === 'boost' ? '' : 'none';
+    document.getElementById('tennisTable').style.display = tab === 'tennis' ? '' : 'none';
+    document.getElementById('boostTable').style.display = tab === 'boost' ? '' : 'none';
+    document.getElementById('formTitle').textContent = tab === 'tennis' ? '🎾 Manual Entry' : '⚡ Manual Entry';
+    document.getElementById('ledgerTitle').textContent = tab === 'tennis' ? 'Tennis — Today\'s Ledger' : 'Boosts / Bonus Bets — Today\'s Ledger';
+    discardQueue();
+    renderTable();
+    updatePnl();
+  }
+
+  // ── FILE ──
+  const dropArea = document.getElementById('dropArea');
+  dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('over'); });
+  dropArea.addEventListener('dragleave', () => dropArea.classList.remove('over'));
+  dropArea.addEventListener('drop', e => { e.preventDefault(); dropArea.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) loadImg(f); });
+  function handleFile(e) { const f = e.target.files[0]; if (f) loadImg(f); }
+  function loadImg(file) {
+    const r = new FileReader();
+    r.onload = ev => {
+      imgB64 = ev.target.result.split(',')[1];
+      document.getElementById('previewImg').src = ev.target.result;
+      dropArea.style.display = 'none';
+      document.getElementById('previewWrap').style.display = 'flex';
+      setStatus('', '');
+    };
+    r.readAsDataURL(file);
+  }
+  function resetImage() {
+    imgB64 = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('previewWrap').style.display = 'none';
+    dropArea.style.display = '';
+    setStatus('', '');
+    discardQueue();
+  }
+
+  // ── SCAN ──
+  async function scanImage() {
+    if (!imgB64) return;
+    const apiKey = settings.apiKey;
+    if (!apiKey || !apiKey.startsWith('sk-')) {
+      setStatus('err', '✗ Add your Anthropic API key in Settings first');
+      document.getElementById('settingsBox').classList.add('open');
+      return;
+    }
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    setStatus('scanning', '<span class="spinner"></span>Scanning — detecting all bets...');
+
+    const prompt = activeTab === 'tennis'
+      ? `This is a sportsbook screenshot of settled tennis bets. Extract ALL bets. Return ONLY a JSON array, no markdown. Each object: set_number, game_number, odds, wager (number only), result (Win/Loss/Void/Cashed Out), return_amount (number only), sportsbook, account_owner. Example: [{"set_number":"3","game_number":"6","odds":"-115","wager":"115.00","result":"Win","return_amount":"215.00","sportsbook":"FanDuel","account_owner":""}]`
+      : `This is a sportsbook screenshot of settled boost/bonus bets. Extract ALL bets. Return ONLY a JSON array, no markdown. Each object: team_player, wager_type, wager (number only), result (Win/Loss/Void/Cashed Out), return_amount (number only), sportsbook, account_owner.`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1500,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/png', data: imgB64 } },
+              { type: 'text', text: prompt }
+            ]
+          }]
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) { setStatus('err', '✗ ' + (data.error.message || data.error.type)); btn.disabled = false; return; }
+
+      const raw = (data.content || []).map(c => c.text || '').join('').trim();
+      if (!raw) { setStatus('err', '✗ Empty response'); btn.disabled = false; return; }
+
+      const cleaned = raw.replace(/^```json\s*/m, '').replace(/^```\s*/m, '').replace(/\s*```$/m, '').trim();
+      let parsed;
+      try { parsed = JSON.parse(cleaned); } catch (_) { setStatus('err', '✗ Could not parse: ' + raw.substring(0, 150)); btn.disabled = false; return; }
+
+      if (!Array.isArray(parsed)) parsed = [parsed];
+      if (!parsed.length) { setStatus('err', '✗ No bets found in image'); btn.disabled = false; return; }
+
+      scanQueue = parsed;
+      renderQueue();
+      setStatus('', '✓ ' + parsed.length + ' bet' + (parsed.length > 1 ? 's' : '') + ' detected — review below');
+    } catch (err) {
+      setStatus('err', '✗ ' + err.message);
+    }
+    btn.disabled = false;
+  }
+
+  // ── QUEUE ──
+  function renderQueue() {
+    const panel = document.getElementById('queuePanel');
+    if (!scanQueue.length) { panel.classList.remove('open'); return; }
+    panel.classList.add('open');
+    document.getElementById('queueSub').textContent = scanQueue.length + ' bet' + (scanQueue.length > 1 ? 's' : '') + ' ready to log';
+    const list = document.getElementById('queueList');
+    list.innerHTML = scanQueue.map((b, i) => {
+      const pnl = compPnl(b.wager, b.return_amount, b.result);
+      const pnlStr = fmtPnl(pnl, b.wager, b.return_amount);
+      const isNeg = pnl < 0;
+      if (activeTab === 'tennis') {
+        return `<div class="qi">
+          <div class="qf"><label>Set #</label><input class="hi" value="${esc(b.set_number)}" onchange="qU(${i},'set_number',this.value)"></div>
+          <div class="qf"><label>Game #</label><input class="hi" value="${esc(b.game_number)}" onchange="qU(${i},'game_number',this.value)"></div>
+          <div class="qf"><label>Odds</label><input class="hi" value="${esc(b.odds)}" onchange="qU(${i},'odds',this.value)"></div>
+          <div class="qf"><label>Wager</label><input class="hi" type="number" step="0.01" value="${esc(b.wager)}" onchange="qU(${i},'wager',this.value);qPnl(${i})"></div>
+          <div class="qf"><label>Result</label><select onchange="qU(${i},'result',this.value);qPnl(${i})">${['','Win','Loss','Void','Cashed Out'].map(o=>`<option${o===b.result?' selected':''}>${o||'—'}</option>`).join('')}</select></div>
+          <div class="qf"><label>Return</label><input class="hi" type="number" step="0.01" value="${esc(b.return_amount)}" onchange="qU(${i},'return_amount',this.value);qPnl(${i})"></div>
+          <div class="qf"><label>P/L</label><input class="ro${isNeg?' neg':''}" id="qpnl-${i}" readonly value="${esc(pnlStr)}"></div>
+          <div class="qf"><label>Sportsbook</label><input class="hi" value="${esc(b.sportsbook)}" onchange="qU(${i},'sportsbook',this.value)"></div>
+          <div class="qf"><label>Owner</label><input value="${esc(b.account_owner)}" onchange="qU(${i},'account_owner',this.value)"></div>
+          <button class="qi-del" onclick="qRm(${i})">×</button>
+        </div>`;
+      } else {
+        return `<div class="qi">
+          <div class="qf" style="min-width:120px"><label>Team / Player</label><input class="hi" value="${esc(b.team_player)}" onchange="qU(${i},'team_player',this.value)"></div>
+          <div class="qf" style="min-width:100px"><label>Wager Type</label><input class="hi" value="${esc(b.wager_type)}" onchange="qU(${i},'wager_type',this.value)"></div>
+          <div class="qf"><label>Wager</label><input class="hi" type="number" step="0.01" value="${esc(b.wager)}" onchange="qU(${i},'wager',this.value);qPnl(${i})"></div>
+          <div class="qf"><label>Result</label><select onchange="qU(${i},'result',this.value);qPnl(${i})">${['','Win','Loss','Void','Cashed Out'].map(o=>`<option${o===b.result?' selected':''}>${o||'—'}</option>`).join('')}</select></div>
+          <div class="qf"><label>Return</label><input class="hi" type="number" step="0.01" value="${esc(b.return_amount)}" onchange="qU(${i},'return_amount',this.value);qPnl(${i})"></div>
+          <div class="qf"><label>P/L</label><input class="ro${isNeg?' neg':''}" id="qpnl-${i}" readonly value="${esc(pnlStr)}"></div>
+          <div class="qf" style="min-width:100px"><label>Sportsbook</label><input class="hi" value="${esc(b.sportsbook)}" onchange="qU(${i},'sportsbook',this.value)"></div>
+          <div class="qf"><label>Owner</label><input value="${esc(b.account_owner)}" onchange="qU(${i},'account_owner',this.value)"></div>
+          <button class="qi-del" onclick="qRm(${i})">×</button>
+        </div>`;
+      }
+    }).join('');
+  }
+
+  function esc(v) { return (v || '').toString().replace(/"/g, '&quot;'); }
+  function qU(i, k, v) { if (scanQueue[i]) scanQueue[i][k] = v; }
+  function qPnl(i) {
+    const b = scanQueue[i]; if (!b) return;
+    const pnl = compPnl(b.wager, b.return_amount, b.result);
+    const el = document.getElementById('qpnl-' + i);
+    if (el) { el.value = fmtPnl(pnl, b.wager, b.return_amount); el.classList.toggle('neg', pnl < 0); }
+  }
+  function qRm(i) { scanQueue.splice(i, 1); renderQueue(); }
+  function discardQueue() { scanQueue = []; document.getElementById('queuePanel').classList.remove('open'); }
+
+  // ── LOG ALL → SHEETS ──
+  async function logAll() {
+    if (!scanQueue.length) return;
+    const tabName = activeTab === 'tennis' ? settings.tennisTab : settings.boostTab;
+    let logged = 0;
+    for (const b of scanQueue) {
+      const pnl = compPnl(b.wager, b.return_amount, b.result);
+      const pnlStr = fmtPnl(pnl, b.wager, b.return_amount) || '—';
+      const row = activeTab === 'tennis'
+        ? [b.set_number || '—', b.game_number || '—', b.odds || '—', b.wager || '0', b.result || '—', b.return_amount || '0', pnlStr, b.sportsbook || '—', b.account_owner || '—', 'No']
+        : [b.team_player || '—', b.wager_type || '—', b.wager || '0', b.result || '—', b.return_amount || '0', pnlStr, b.sportsbook || '—', b.account_owner || '—', 'No'];
+
+      // Push to Google Sheets
+      try { await fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tab: tabName, row }) }); } catch (_) {}
+
+      // Also save locally
+      if (activeTab === 'tennis') {
+        entries.tennis.push({ set: row[0], game: row[1], odds: row[2], wager: row[3], result: row[4], ret: row[5], pnl: pnlStr, book: row[7], owner: row[8], verified: 'No' });
+      } else {
+        entries.boost.push({ team: row[0], type: row[1], wager: row[2], result: row[3], ret: row[4], pnl: pnlStr, book: row[6], owner: row[7], verified: 'No' });
+      }
+      logged++;
+    }
+    persist();
+    renderTable();
+    updatePnl();
+    discardQueue();
+    resetImage();
+    showToast('✓ ' + logged + ' bet' + (logged > 1 ? 's' : '') + ' logged to Sheets');
+  }
+
+  // ── MANUAL PNL ──
+  function calcPnl(p) {
+    const wager = parseFloat(document.getElementById(p + '_wager')?.value) || 0;
+    const ret = parseFloat(document.getElementById(p + '_return')?.value) || 0;
+    const result = document.getElementById(p + '_result')?.value || '';
+    const pnlEl = document.getElementById(p + '_pnl');
+    if (!pnlEl) return;
+    const pnl = result === 'Void' ? 0 : result === 'Loss' ? -wager : ret - wager;
+    if (wager > 0 || ret > 0) {
+      pnlEl.value = (pnl >= 0 ? '+' : '') + pnl.toFixed(2);
+      pnlEl.classList.toggle('neg', pnl < 0);
+    } else { pnlEl.value = ''; }
+  }
+
+  // ── MANUAL LOG → SHEETS ──
+  async function logEntry() {
+    const tabName = activeTab === 'tennis' ? settings.tennisTab : settings.boostTab;
+    let row, entry;
+    if (activeTab === 'tennis') {
+      const pnlVal = document.getElementById('t_pnl').value || '—';
+      row = [g('t_set') || '—', g('t_game') || '—', g('t_odds') || '—', g('t_wager') || '0', g('t_result') || '—', g('t_return') || '0', pnlVal, g('t_book') || '—', g('t_owner') || '—', g('t_verified') || '—'];
+      entry = { set: row[0], game: row[1], odds: row[2], wager: row[3], result: row[4], ret: row[5], pnl: pnlVal, book: row[7], owner: row[8], verified: row[9] };
+      entries.tennis.push(entry);
+    } else {
+      const pnlVal = document.getElementById('b_pnl').value || '—';
+      row = [g('b_team') || '—', g('b_type') || '—', g('b_wager') || '0', g('b_result') || '—', g('b_return') || '0', pnlVal, g('b_book') || '—', g('b_owner') || '—', g('b_verified') || '—'];
+      entry = { team: row[0], type: row[1], wager: row[2], result: row[3], ret: row[4], pnl: pnlVal, book: row[6], owner: row[7], verified: row[8] };
+      entries.boost.push(entry);
+    }
+    try { await fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tab: tabName, row }) }); } catch (_) {}
+    persist(); renderTable(); updatePnl(); clearForm();
+    showToast('✓ Entry logged to Sheets');
+  }
+
+  function g(id) { return document.getElementById(id)?.value || ''; }
+
+  // ── RENDER ──
+  function renderTable() {
+    const rows = entries[activeTab];
+    const count = rows.length;
+    document.getElementById('ledgerCount').textContent = count + ' entr' + (count === 1 ? 'y' : 'ies');
+    if (activeTab === 'tennis') {
+      document.getElementById('tennisEmpty').style.display = count ? 'none' : '';
+      document.getElementById('tennisTbody').innerHTML = entries.tennis.map((e, i) => `
+        <tr>
+          <td>${e.set}</td><td>${e.game}</td><td>${e.odds}</td>
+          <td>$${parseFloat(e.wager).toFixed(2)}</td>
+          <td class="${rc(e.result)}">${e.result}</td>
+          <td>$${parseFloat(e.ret).toFixed(2)}</td>
+          <td class="${pc(e.pnl)}">${e.pnl}</td>
+          <td>${e.book}</td><td>${e.owner}</td>
+          <td class="${e.verified === 'Yes' ? 'td-vy' : 'td-vn'}">${e.verified}</td>
+          <td><button class="del-btn" onclick="delEntry(${i})">×</button></td>
+        </tr>`).join('');
+    } else {
+      document.getElementById('boostEmpty').style.display = count ? 'none' : '';
+      document.getElementById('boostTbody').innerHTML = entries.boost.map((e, i) => `
+        <tr>
+          <td>${e.team}</td><td>${e.type}</td>
+          <td>$${parseFloat(e.wager).toFixed(2)}</td>
+          <td class="${rc(e.result)}">${e.result}</td>
+          <td>$${parseFloat(e.ret).toFixed(2)}</td>
+          <td class="${pc(e.pnl)}">${e.pnl}</td>
+          <td>${e.book}</td><td>${e.owner}</td>
+          <td class="${e.verified === 'Yes' ? 'td-vy' : 'td-vn'}">${e.verified}</td>
+          <td><button class="del-btn" onclick="delEntry(${i})">×</button></td>
+        </tr>`).join('');
+    }
+  }
+
+  function delEntry(i) { entries[activeTab].splice(i, 1); persist(); renderTable(); updatePnl(); showToast('Entry removed'); }
+  function clearAll() { if (!confirm('Clear all ' + activeTab + ' entries?')) return; entries[activeTab] = []; persist(); renderTable(); updatePnl(); showToast('Cleared'); }
+
+  function updatePnl() {
+    const total = [...entries.tennis, ...entries.boost].reduce((s, e) => { const v = parseFloat(e.pnl); return s + (isNaN(v) ? 0 : v); }, 0);
+    const el = document.getElementById('totalPnl');
+    el.textContent = (total >= 0 ? '+$' : '-$') + Math.abs(total).toFixed(2);
+    el.classList.toggle('neg', total < 0);
+  }
+
+  function clearForm() {
+    ['t_set','t_game','t_odds','t_wager','t_result','t_return','t_pnl','t_book','t_owner','t_verified',
+     'b_team','b_type','b_wager','b_result','b_return','b_pnl','b_book','b_owner','b_verified'].forEach(id => {
+      const el = document.getElementById(id); if (!el) return;
+      el.value = ''; el.classList.remove('neg');
+    });
+  }
+
+  // ── HELPERS ──
+  function compPnl(wager, ret, result) {
+    const w = parseFloat(wager) || 0, r = parseFloat(ret) || 0;
+    if (result === 'Void') return 0;
+    if (result === 'Loss') return -w;
+    return r - w;
+  }
+  function fmtPnl(pnl, wager, ret) {
+    const w = parseFloat(wager) || 0, r = parseFloat(ret) || 0;
+    if (w === 0 && r === 0) return '';
+    return (pnl >= 0 ? '+' : '') + pnl.toFixed(2);
+  }
+  function rc(r) { return r === 'Win' ? 'td-win' : r === 'Loss' ? 'td-loss' : r === 'Void' ? 'td-void' : r === 'Cashed Out' ? 'td-cashed' : ''; }
+  function pc(p) { if (!p || p === '—') return ''; return parseFloat(p) >= 0 ? 'td-pp' : 'td-pn'; }
+  function setStatus(type, msg) { const el = document.getElementById('statusBar'); el.innerHTML = msg; el.className = 'status-bar' + (type ? ' ' + type : ''); }
+
+  let _tt;
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (type ? ' t-' + type : '');
+    clearTimeout(_tt); _tt = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  init();
+</script>
+</body>
+</html>
