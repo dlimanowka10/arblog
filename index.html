@@ -388,7 +388,7 @@
       : `This is a sportsbook screenshot of settled boost/bonus bets. Extract ALL bets. Return ONLY a JSON array, no markdown. Each object: team_player, wager_type, wager (number only), result (Win/Loss/Void/Cashed Out), return_amount (number only), sportsbook, account_owner.`;
 
     try {
-      const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.anthropic.com/v1/messages'), {
+      const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.anthropic.com/v1/messages'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
